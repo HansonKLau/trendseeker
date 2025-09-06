@@ -17,13 +17,13 @@ export class Home implements OnInit {
   earnings: Earnings[] = [];
 
   ngOnInit(): void {
-    this.earningsService.getEarnings().pipe(catchError((err) => {
-      console.error('Error fetching earnings data', err);
-      throw err;
-    })).subscribe(data => {
-      this.earnings = data;
-      console.log(data);
-    });
+    // this.earningsService.getEarnings().pipe(catchError((err) => {
+    //   console.error('Error fetching earnings data', err);
+    //   throw err;
+    // })).subscribe(data => {
+    //   this.earnings = data;
+    //   console.log(data);
+    // });
   }
 
 }

@@ -20,7 +20,7 @@ export class EarningsService {
     const today = new Date();
 
     const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setDate(today.getDate() + 30);
 
     // format dates as YYYY-MM-DD for the API
     const formatDate = (date: Date): string => {
