@@ -1,11 +1,12 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { EarningsService } from '../services/get-earnings';
 import { Earnings } from '../models/earnings.model';
+import { Dashboard } from '../dashboard/dashboard';
 import { catchError } from 'rxjs';
 
 @Component({
   selector: 'app-home',
-  imports: [],
+  imports: [Dashboard],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   providers: [EarningsService]

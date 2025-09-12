@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
 export class EarningsService {
 
   private FMP_API_KEY = environment.FMP_API_KEY;
-  private FMP_EARNINGS_URL = environment.FMP_EARNINGS_CALENDAR_URL
+  private FMP_EARNINGS_URL = environment.FMP_EARNINGS_CALENDAR_URL;
 
   constructor(private http: HttpClient) {}
 
