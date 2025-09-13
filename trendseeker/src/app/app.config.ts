@@ -13,12 +13,5 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideAuth0({
-      domain: environment.AUTH0_DOMAIN,
-      clientId: environment.AUTH0_CLIENT_ID,
-      authorizationParams: {
-        redirect_uri: window.location.origin
-      }
-    }),
   ]
 };
