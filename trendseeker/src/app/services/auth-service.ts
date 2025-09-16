@@ -13,7 +13,7 @@ export class AuthService {
   constructor(private http: HttpClient) { }
 
   login(): Observable<{ auth_url: string }> {
-    return this.http.get<{ auth_url: string }>(`${this.baseUrl}/login`);  
+    return this.http.get<{ auth_url: string }>(`${this.baseUrl}/login`, { withCredentials: true });  
   }
 
 }

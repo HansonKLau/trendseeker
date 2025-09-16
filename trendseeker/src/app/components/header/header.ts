@@ -15,13 +15,15 @@ export class Header {
 
   login() {
     this.authService.login().subscribe({
-      next: () => {
+      next: (res) => {
         console.log("Login API triggered");
+        window.open(res.auth_url, "_blank");
       },
       error: err => {
         console.error("Error calling login API", err);
       }
     });
   }
+
 
 }
