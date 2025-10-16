@@ -4,12 +4,13 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "vercel-build": "npx ng build --configuration=production",
+    "make-env": "node makeEnv.js",
+    "prebuild": "node makeEnv.js",
+    "prevercel-build": "node makeEnv.js",
+    "vercel-build": "node makeEnv.js && npx ng build --configuration=production",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "prebuild": "node makeEnv.js",
-    "make-env": "node makeEnv.js"
+    "test": "ng test"
   },
   "prettier": {
     "printWidth": 100,
