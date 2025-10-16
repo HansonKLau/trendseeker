@@ -4,6 +4,6 @@
   ],
   "outputDirectory": "dist/trendseeker",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/src/index.html" }
   ]
 }
