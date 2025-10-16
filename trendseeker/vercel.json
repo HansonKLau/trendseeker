@@ -4,6 +4,6 @@
   ],
   "outputDirectory": "dist/trendseeker/browser",
   "routes": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "src": "/(.*)", "destination": "/index.html" }
   ]
 }
