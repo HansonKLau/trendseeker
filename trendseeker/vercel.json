@@ -2,8 +2,8 @@
   "builds": [
     { "src": "package.json", "use": "@vercel/static-build" }
   ],
-  "outputDirectory": "dist/trendseeker",
+  "outputDirectory": "dist/trendseeker/browser",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/src/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
