@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { interval } from 'rxjs';
 import { AuthService } from '../services/auth-service';
+import { UserInfoService } from '../services/user-info-service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -11,7 +12,9 @@ import { Router } from '@angular/router';
 })
 export class Dashboard implements OnInit {
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, 
+              private userInfoService: UserInfoService,
+              private router: Router) {}
 
   ngOnInit() {
 
@@ -62,6 +65,24 @@ export class Dashboard implements OnInit {
       }
     });
 
+    // getting general schwab user info for display
+    // this.userInfoService.getFullAccountInfo().subscribe({
+    //   next: (res) => {
+    //     console.log("Full account info:", res);
+    //   },
+    //   error: err => {
+    //     console.error("Error calling getFullAccountInfo API", err);
+    //   }
+    // });
+
+    this.userInfoService.getAccountNumbers().subscribe({
+      next: (res) => {
+        // console.log("Account numbers:", res);
+      },
+      error: err => {
+        console.error("Error calling getAccountNumbers API", err);
+      }
+    });
   
   }
 
