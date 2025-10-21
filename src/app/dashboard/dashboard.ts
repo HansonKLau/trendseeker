@@ -65,25 +65,6 @@ export class Dashboard implements OnInit {
       }
     });
 
-    // getting general schwab user info for display
-    // this.userInfoService.getFullAccountInfo().subscribe({
-    //   next: (res) => {
-    //     console.log("Full account info:", res);
-    //   },
-    //   error: err => {
-    //     console.error("Error calling getFullAccountInfo API", err);
-    //   }
-    // });
-
-    this.userInfoService.getAccountNumbers().subscribe({
-      next: (res) => {
-        // console.log("Account numbers:", res);
-      },
-      error: err => {
-        console.error("Error calling getAccountNumbers API", err);
-      }
-    });
   
   }
-
 }
