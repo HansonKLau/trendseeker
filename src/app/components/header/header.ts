@@ -16,11 +16,11 @@ export class Header implements OnInit {
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.authService.isLoggedIn().subscribe({
+    this.authService.schwabIsLoggedIn().subscribe({
       next: (res) => {
-        this.authService.setLoggedIn(res.logged_in);
-        this.loggedIn = this.authService.getLoggedIn();
-        console.log("User logged in status:", this.authService.getLoggedIn());
+        this.authService.setSchwabLoggedIn(res.logged_in);
+        this.loggedIn = this.authService.getSchwabLoggedIn();
+        console.log("User logged in status:", this.authService.getSchwabLoggedIn());
       },
       error: err => {
         console.error("Error calling isLoggedIn API", err);
@@ -29,32 +29,42 @@ export class Header implements OnInit {
   }
 
   login() {
-    this.authService.login().subscribe({
-      next: (res) => {
-        console.log("Login API triggered");
-        window.open(res.auth_url, "_self");
-      },
-      error: err => {
-        console.error("Error calling login API", err);
-      }
-    });
+    this.authService.user$.subscribe({
+          next: (user) => {
+            if (!user) {
+              console.warn("User not logged in → redirecting to Firebase login");
+              this.authService.googleLogin().catch(err => console.error("Login error:", err));
+              return;
+            }
+    
+            console.log("Firebase user logged in:", user.email);
+    
+            this.authService.schwabIsLoggedIn().subscribe({
+              next: (res) => {
+                if (!res.logged_in) {
+                  console.log("Schwab not connected, starting Schwab auth flow...");
+                  this.authService.schwabLogin().subscribe({
+                    next: (res) => {
+                      window.open(res.auth_url, "_self");
+                    },
+                    error: (err) => console.error("Error calling Schwab login:", err)
+                  });
+                }
+              },
+              error: (err) => console.error("Error checking Schwab login:", err)
+            });
+          },
+          error: (err) => console.error("Auth state subscription error:", err)
+        });
   }
 
   logout() {
-    this.authService.setLoggedIn(false);
-    this.loggedIn = false;
-
-    this.authService.logout().subscribe({
-      next: () => {
-        console.log("Logout API triggered");
-      },
-      error: err => {
-        console.error("Error calling logout API", err);
-      }
+    this.authService.googleLogout().then(() => {
+      console.log("User logged out successfully");
+    }).catch(err => {
+      console.error("Logout error:", err);
     });
 
     this.router.navigate(['/']);
   }
-
-
 }

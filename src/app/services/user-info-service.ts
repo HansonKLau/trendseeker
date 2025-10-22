@@ -19,11 +19,11 @@ export class UserInfoService {
   // });
   // }
 
-  getAccountNumbers(): Observable<String[]> {
-    return this.http.get<String[]>(`${this.baseUrl}/profile`, {
-      withCredentials: true,
-    });
-  }
+  // getAccountNumbers(): Observable<String[]> {
+  //   return this.http.get<String[]>(`${this.baseUrl}/profile`, {
+  //     withCredentials: true,
+  //   });
+  // }
 
   // getFullAccountInfo(): Observable<String> {
   //   return this.http.get<String>(`${this.baseUrl}/profile`, {
