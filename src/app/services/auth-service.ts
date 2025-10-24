@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, from } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
 import { auth } from '../../firebase/firebase';
+import { HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -60,7 +62,18 @@ export class AuthService {
   private baseUrl = environment.apiUrl + '/auth';
 
   schwabLogin(): Observable<{ auth_url: string }> {
-    return this.http.get<{ auth_url: string }>(`${this.baseUrl}/login`, { withCredentials: true });  
+    // from converts promise to observable
+    return from(this.getFirebaseIdToken()).pipe(
+      // switchMap waits for the idToken before proceeding
+      switchMap((idToken: string) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${idToken}`,
+        });
+
+        // http.get returns an observable
+        return this.http.get<{ auth_url: string }>(`${this.baseUrl}/login`, { headers, withCredentials: true });
+      })
+    );
   }
 
   schwabLogout(): Observable<{ message: string }> {
@@ -68,11 +81,29 @@ export class AuthService {
   }
 
   schwabRefreshTokens(): Observable<{ message: string }> {
-    return this.http.get<{ message: string }>(`${this.baseUrl}/refresh-tokens`, { withCredentials: true });
+
+    return from(this.getFirebaseIdToken()).pipe(
+      switchMap((idToken: string) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${idToken}`,
+        });
+
+        return this.http.get<{ message: string }>(`${this.baseUrl}/refresh-tokens`, { headers, withCredentials: true });
+      })
+    );
   }
 
   schwabIsLoggedIn(): Observable<{ logged_in: boolean }> {
-    return this.http.get<{ logged_in: boolean }>(`${this.baseUrl}/status`, { withCredentials: true });
+
+    return from(this.getFirebaseIdToken()).pipe(
+      switchMap((idToken: string) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${idToken}`,
+        });
+
+        return this.http.get<{ logged_in: boolean }>(`${this.baseUrl}/status`, { headers, withCredentials: true });
+      })
+    );
   }
 
   setSchwabLoggedIn(status: boolean) {

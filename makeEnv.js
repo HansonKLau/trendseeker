@@ -4,10 +4,17 @@ const path = require('path');
 const targetPath = path.join(__dirname, 'src/environments/environment.ts');
 
 const envConfigFile = `
-export const environment = {
-  production: '${process.env.PRODUCTION || ''}',
-  apiUrl: '${process.env.API_URL || ''}',
-};
+  export const environment = {
+    production: '${process.env.PRODUCTION || ''}',
+    apiUrl: '${process.env.API_URL || ''}',
+    firebaseApiKey: '${process.env.FIREBASE_API_KEY || ''}',
+    firebaseAuthDomain: '${process.env.FIREBASE_AUTH_DOMAIN || ''}',
+    firebaseProjectId: '${process.env.FIREBASE_PROJECT_ID || ''}',
+    firebaseStorageBucket: '${process.env.FIREBASE_STORAGE_BUCKET || ''}',
+    firebaseMessagingSenderId: '${process.env.FIREBASE_MESSAGING_SENDER_ID || ''}',
+    firebaseAppId: '${process.env.FIREBASE_APP_ID || ''}',
+    frontendUrl: '${process.env.FRONTEND_URL || ''}',
+  };
 `;
 
 fs.mkdirSync(path.dirname(targetPath), { recursive: true });

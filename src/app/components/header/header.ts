@@ -49,6 +49,18 @@ export class Header implements OnInit {
                     },
                     error: (err) => console.error("Error calling Schwab login:", err)
                   });
+
+                } else {
+                  console.log("Schwab already connected.");
+                  // invoke refresh tokens
+                  this.authService.schwabRefreshTokens().subscribe({
+                    next: (res) => {
+                      console.log("Schwab tokens refreshed:", res?.message);
+                      // navigate to dashboard in SPA after successful token refresh
+                      this.router.navigate(['/dashboard']);
+                    },
+                    error: (err) => console.error("Error refreshing Schwab tokens:", err)
+                  });
                 }
               },
               error: (err) => console.error("Error checking Schwab login:", err)
