@@ -13,18 +13,34 @@ import { CommonModule } from '@angular/common';
 export class Header implements OnInit {
 
   public loggedIn: boolean = false;
+  public firebaseLoggedIn: boolean = false;
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.authService.schwabIsLoggedIn().subscribe({
-      next: (res) => {
-        this.authService.setSchwabLoggedIn(res.logged_in);
-        this.loggedIn = this.authService.getSchwabLoggedIn();
-        console.log("User logged in status:", this.authService.getSchwabLoggedIn());
+    // this.authService.schwabIsLoggedIn().subscribe({
+    //   next: (res) => {
+    //     this.authService.setSchwabLoggedIn(res.logged_in);
+    //     this.loggedIn = this.authService.getSchwabLoggedIn();
+    //     console.log("User logged in status:", this.authService.getSchwabLoggedIn());
+    //   },
+    //   error: err => {
+    //     console.error("Error calling isLoggedIn API", err);
+    //   }
+    // });
+    this.authService.user$.subscribe({
+      next: (user) => {
+        this.firebaseLoggedIn = !!user;
+        const signedInWithGoogle = !!user?.providerData?.some((p: { providerId: string; }) => p.providerId === 'google.com');
+        console.log('Firebase user:', user?.email, 'google:', signedInWithGoogle);
+
+        if (!this.firebaseLoggedIn) {
+          // not signed in with Firebase -> ensure UI reflects signed-out
+          this.loggedIn = false;
+          this.authService.setSchwabLoggedIn(false);
+          return;
+        }
       },
-      error: err => {
-        console.error("Error calling isLoggedIn API", err);
-      }
+      error: (err) => console.error('Auth state subscription error:', err)
     });
   }
 
