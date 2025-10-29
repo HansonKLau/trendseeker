@@ -5,15 +5,16 @@
         <li>
             <a routerLink="/">Home</a>
         </li>
-        <li *ngIf="loggedIn">
+        <li *ngIf="firebaseLoggedIn">
             <button (click)="logout()">Logout</button>
         </li>
-        <li *ngIf="loggedIn">
+        <li *ngIf="firebaseLoggedIn">
             <a routerLink="/dashboard">Dashboard</a>
         </li>
-        <li *ngIf="!loggedIn">
+        <li *ngIf="!firebaseLoggedIn">
             <button (click)="login()">Login</button>
         </li>
+
     </ul>
 
 </nav>
