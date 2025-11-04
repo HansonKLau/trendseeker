@@ -20,7 +20,7 @@ export class AuthService {
 
   constructor(private http: HttpClient) {
     
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, (user: any) => {
       this.userSubject.next(user);
     });
   }

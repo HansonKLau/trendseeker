@@ -26,9 +26,7 @@ export class Header {
           this.schwabConnected = false;
         }
       },
-      error: err => {
-        console.error("Error calling isLoggedIn API", err);
-      }
+      error: (err) => console.error('Auth state subscription error:', err)
     });
 
     if (this.authService.firebaseLoggedIn()) {
