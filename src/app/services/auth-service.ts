@@ -30,6 +30,11 @@ export class AuthService {
   async googleLogin() {
     const provider = new GoogleAuthProvider();
 
+    if (auth.currentUser) {
+      console.log("Already signed in");
+      return auth.currentUser;
+    }
+
     try {
       const result = await signInWithPopup(auth, provider);
       return result.user;
@@ -58,7 +63,7 @@ export class AuthService {
 
   // SCHWAB LOGIN
 
-  private schwabLoggedIn = false;
+  private schwabConnected = false;
   private baseUrl = environment.apiUrl + '/auth';
 
   schwabLogin(): Observable<{ auth_url: string }> {
@@ -106,12 +111,12 @@ export class AuthService {
     );
   }
 
-  setSchwabLoggedIn(status: boolean) {
-    this.schwabLoggedIn = status;
+  setSchwabConnected(status: boolean) {
+    this.schwabConnected = status;
   }
 
-  getSchwabLoggedIn(): boolean {
-    return this.schwabLoggedIn;
+  getSchwabConnected(): boolean {
+    return this.schwabConnected;
   }
 
 }

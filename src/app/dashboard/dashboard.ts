@@ -18,11 +18,17 @@ export class Dashboard implements OnInit {
 
   ngOnInit() {
 
+    if (!this.authService.getSchwabConnected()) {
+      console.warn('User not connected to Schwab → redirecting to home');
+      this.router.navigate(['/']);
+      return;
+    }
+
     this.authService.user$.subscribe({
       next: (user) => {
         if (!user) {
-          console.warn("User not logged in → redirecting to Firebase login");
-          this.authService.googleLogin().catch(err => console.error("Login error:", err));
+          console.warn('User not logged in → redirecting to home');
+          this.router.navigate(['/']);
           return;
         }
 

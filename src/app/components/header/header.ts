@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth-service';
 import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -10,73 +11,120 @@ import { CommonModule } from '@angular/common';
   styleUrl: './header.scss',
 })
 
-export class Header implements OnInit {
+export class Header {
 
-  public loggedIn: boolean = false;
-  constructor(private authService: AuthService, private router: Router) {}
+  public schwabConnected: boolean = false;
+
+  constructor(public authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.authService.schwabIsLoggedIn().subscribe({
       next: (res) => {
-        this.authService.setSchwabLoggedIn(res.logged_in);
-        this.loggedIn = this.authService.getSchwabLoggedIn();
-        console.log("User logged in status:", this.authService.getSchwabLoggedIn());
+        if (res.logged_in) {
+          this.schwabConnected = true;
+        } else {
+          this.schwabConnected = false;
+        }
       },
       error: err => {
         console.error("Error calling isLoggedIn API", err);
       }
     });
+
+    if (this.authService.firebaseLoggedIn()) {
+      console.log('User already logged in to Firebase');
+    }
   }
 
-  login() {
-    this.authService.user$.subscribe({
-          next: (user) => {
-            if (!user) {
-              console.warn("User not logged in → redirecting to Firebase login");
-              this.authService.googleLogin().catch(err => console.error("Login error:", err));
-              return;
-            }
-    
-            console.log("Firebase user logged in:", user.email);
-    
-            this.authService.schwabIsLoggedIn().subscribe({
+  async login() {
+    try {
+      
+      if (!this.authService.firebaseLoggedIn()) {
+        console.warn('User not logged in → redirecting to Firebase login');
+        await this.authService.googleLogin();
+        return;
+      }
+
+      console.log('Firebase user logged in');
+
+      this.authService.schwabIsLoggedIn().subscribe({
+        next: (res) => {
+          if (!res.logged_in) {
+            console.log('Schwab not connected, starting Schwab auth flow...');
+            this.authService.schwabLogin().subscribe({
               next: (res) => {
-                if (!res.logged_in) {
-                  console.log("Schwab not connected, starting Schwab auth flow...");
-                  this.authService.schwabLogin().subscribe({
-                    next: (res) => {
-                      window.open(res.auth_url, "_self");
-                    },
-                    error: (err) => console.error("Error calling Schwab login:", err)
-                  });
-
-                } else {
-                  console.log("Schwab already connected.");
-                  // invoke refresh tokens
-                  this.authService.schwabRefreshTokens().subscribe({
-                    next: (res) => {
-                      console.log("Schwab tokens refreshed:", res?.message);
-                      // navigate to dashboard in SPA after successful token refresh
-                      this.router.navigate(['/dashboard']);
-                    },
-                    error: (err) => console.error("Error refreshing Schwab tokens:", err)
-                  });
-                }
+                window.open(res.auth_url, '_self');
               },
-              error: (err) => console.error("Error checking Schwab login:", err)
+              error: (err) => console.error('Error calling Schwab login:', err)
             });
-          },
-          error: (err) => console.error("Auth state subscription error:", err)
-        });
+
+          } else {
+            console.log('Schwab already connected.');
+            // invoke refresh tokens
+            this.authService.schwabRefreshTokens().subscribe({
+              next: (res) => {
+                console.log('Schwab tokens refreshed:', res?.message);
+                // navigate to dashboard in SPA after successful token refresh
+                this.router.navigate(['/dashboard']);
+              },
+              error: (err) => console.error('Error refreshing Schwab tokens:', err)
+            });
+          }
+        },
+        error: (err) => console.error('Error checking Schwab login:', err)
+      });
+
+    } catch (err) {
+      console.error('Auth state error:', err);
+    }
   }
 
-  logout() {
-    this.authService.googleLogout().then(() => {
-      console.log("User logged out successfully");
-    }).catch(err => {
-      console.error("Logout error:", err);
-    });
+  async schwabLogin() {
+    try {
 
-    this.router.navigate(['/']);
+      this.authService.schwabIsLoggedIn().subscribe({
+        next: (res) => {
+          if (!res.logged_in) {
+            console.log('Schwab not connected, starting Schwab auth flow...');
+            this.authService.schwabLogin().subscribe({
+              next: (res) => {
+                window.open(res.auth_url, '_self');
+              },
+              error: (err) => console.error('Error calling Schwab login:', err)
+            });
+
+          } else {
+            console.log('Schwab already connected.');
+            this.schwabConnected = true;
+            this.authService.setSchwabConnected(true);
+            // invoke refresh tokens
+            this.authService.schwabRefreshTokens().subscribe({
+              next: (res) => {
+                console.log('Schwab tokens refreshed:', res?.message);
+                // navigate to dashboard in SPA after successful token refresh
+                this.router.navigate(['/dashboard']);
+              },
+              error: (err) => console.error('Error refreshing Schwab tokens:', err)
+            });
+          }
+        },
+        error: (err) => console.error('Error checking Schwab login:', err)
+      });
+
+    } catch (err) {
+      console.error('Auth state error:', err);
+    }
+  }
+
+  async logout() {
+    try {
+      await this.authService.googleLogout();
+      this.schwabConnected = false;
+      this.authService.setSchwabConnected(false);
+      console.log("User logged out successfully");
+      this.router.navigate(['/']);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   }
 }
