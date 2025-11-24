@@ -18,9 +18,9 @@
             <button (click)="login()">Login</button>
         </li>
 
-        <li *ngIf="!schwabConnected && (authService.user$ | async)">
+        <!-- <li *ngIf="!schwabConnected && (authService.user$ | async)">
             <button (click)="schwabLogin()">Connect to Schwab</button>
-        </li>
+        </li> -->
     </ul>
 
 </nav>

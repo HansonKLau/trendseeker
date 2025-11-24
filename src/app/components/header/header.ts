@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth-service';
+import { UserInfoService } from '../../services/user-info-service';
 import { CommonModule } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, switchMap, tap, NEVER} from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -15,7 +16,7 @@ export class Header {
 
   public schwabConnected: boolean = false;
 
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(public authService: AuthService, private userService: UserInfoService, private router: Router) {}
 
   ngOnInit() {
     this.authService.schwabIsLoggedIn().subscribe({
@@ -34,85 +35,82 @@ export class Header {
     }
   }
 
-  async login() {
+  login() {
     try {
+
+      this.authService.googleLogin().pipe(
+        switchMap(googleRes => {
+          console.log('Firebase login successful:', googleRes);
+          return this.schwabLogin();
+        })
+      ).subscribe(schwabRes => {
+          console.log('Schwab login flow initiated:', schwabRes);
+        }
+      ) 
       
-      if (!this.authService.firebaseLoggedIn()) {
-        console.warn('User not logged in → redirecting to Firebase login');
-        await this.authService.googleLogin();
-        return;
-      }
+      // if (!this.authService.firebaseLoggedIn()) {
+      //   console.warn('User not logged in → redirecting to Firebase login');
+      //   await this.authService.googleLogin();
+      //   return;
+      // }
 
-      console.log('Firebase user logged in');
+      // console.log('Firebase user logged in');
 
-      this.authService.schwabIsLoggedIn().subscribe({
-        next: (res) => {
-          if (!res.logged_in) {
-            console.log('Schwab not connected, starting Schwab auth flow...');
-            this.authService.schwabLogin().subscribe({
-              next: (res) => {
-                window.open(res.auth_url, '_self');
-              },
-              error: (err) => console.error('Error calling Schwab login:', err)
-            });
+      // this.authService.schwabIsLoggedIn().pipe(
 
-          } else {
-            console.log('Schwab already connected.');
-            // invoke refresh tokens
-            this.authService.schwabRefreshTokens().subscribe({
-              next: (res) => {
-                console.log('Schwab tokens refreshed:', res?.message);
-                // navigate to dashboard in SPA after successful token refresh
-                this.router.navigate(['/dashboard']);
-              },
-              error: (err) => console.error('Error refreshing Schwab tokens:', err)
-            });
-          }
-        },
-        error: (err) => console.error('Error checking Schwab login:', err)
-      });
+      //   // makes sure schwab is connected
+      //   switchMap(res => {
+      //     if (!res.logged_in) {
+      //       console.log("Schwab not connected, starting auth flow...");
+      //       return this.authService.schwabLogin().pipe(
+      //         tap(login => window.open(login.auth_url, "_self")),
+      //         switchMap(() => NEVER)
+      //       );
+      //     }
 
-    } catch (err) {
-      console.error('Auth state error:', err);
-    }
-  }
+      //     console.log("Schwab already connected.");
 
-  async schwabLogin() {
-    try {
+      //     return this.authService.schwabRefreshTokens();
+      //   }),
 
-      this.authService.schwabIsLoggedIn().subscribe({
-        next: (res) => {
-          if (!res.logged_in) {
-            console.log('Schwab not connected, starting Schwab auth flow...');
-            this.authService.schwabLogin().subscribe({
-              next: (res) => {
-                window.open(res.auth_url, '_self');
-              },
-              error: (err) => console.error('Error calling Schwab login:', err)
-            });
+      //   switchMap(() => this.userService.setAccountInfo())
 
-          } else {
-            console.log('Schwab already connected.');
-            this.schwabConnected = true;
-            this.authService.setSchwabConnected(true);
-            // invoke refresh tokens
-            this.authService.schwabRefreshTokens().subscribe({
-              next: (res) => {
-                console.log('Schwab tokens refreshed:', res?.message);
-                // navigate to dashboard in SPA after successful token refresh
-                this.router.navigate(['/dashboard']);
-              },
-              error: (err) => console.error('Error refreshing Schwab tokens:', err)
-            });
-          }
-        },
-        error: (err) => console.error('Error checking Schwab login:', err)
-      });
+      // ).subscribe({
+      //   next: () => {
+      //     console.log("Account info set");
+      //     this.router.navigate(['/dashboard']);
+      //   },
+      //   error: err => console.error("Flow error:", err)
+      // });
 
     } catch (err) {
       console.error('Auth state error:', err);
     }
   }
+
+  schwabLogin() {
+    return this.authService.schwabIsLoggedIn().pipe(
+      switchMap(res => {
+        if (!res.logged_in) {
+          console.log('Schwab not connected, starting Schwab auth flow...');
+          return this.authService.schwabLogin().pipe(
+            tap(res => window.open(res.auth_url, '_self'))
+          );
+        } else {
+          console.log('Schwab already connected.');
+          this.schwabConnected = true;
+          this.authService.setSchwabConnected(true);
+
+          return this.authService.schwabRefreshTokens().pipe(
+            tap(res => {
+              console.log('Schwab tokens refreshed:', res.message);
+              this.router.navigate(['/dashboard']);
+            })
+          );
+        }
+      })
+  );
+}
 
   async logout() {
     try {

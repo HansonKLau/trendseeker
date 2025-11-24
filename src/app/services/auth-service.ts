@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, from } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, from, throwError, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
@@ -27,21 +27,30 @@ export class AuthService {
 
   // FIREBASE LOGIN
 
-  async googleLogin() {
+  googleLogin(): Observable<User> {
     const provider = new GoogleAuthProvider();
 
     if (auth.currentUser) {
       console.log("Already signed in");
-      return auth.currentUser;
+      return of(auth.currentUser);
     }
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
-    } catch (error) {
-      console.error("Google login failed:", error);
-      throw error;
-    }
+
+    return from(signInWithPopup(auth, provider)).pipe(
+      map(result => result.user),
+      catchError(error => {
+        console.error("Google login failed:", error);
+        return throwError(() => error);
+      })
+    );
+
+      // try {
+      //   const result = await signInWithPopup(auth, provider);
+      //   return result.user;
+      // } catch (error) {
+      //   console.error("Google login failed:", error);
+      //   throw error;
+      // }
   }
 
   async getFirebaseIdToken(): Promise<string> {
