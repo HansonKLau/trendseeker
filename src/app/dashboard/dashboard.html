@@ -1,1 +1,61 @@
-<p>dashboard works!</p>
+<section class="dashboard">
+  <h2>Positions</h2>
+  <p class="note">Read-only view of your Schwab positions.</p>
+
+  <p *ngIf="status === 'loading'" class="status">Loading positions…</p>
+
+  <p *ngIf="status === 'signed-out'" class="status">Sign in to view your Schwab positions.</p>
+
+  <div *ngIf="status === 'not-connected'" class="status">
+    <p>Schwab is not connected.</p>
+    <p>Connect Schwab while signed in, then open the dashboard again.</p>
+  </div>
+
+  <div *ngIf="status === 'error'" class="status">
+    <p>{{ errorMessage }}</p>
+    <button type="button" (click)="load()">Try again</button>
+  </div>
+
+  <p *ngIf="status === 'empty'" class="status">No open positions.</p>
+
+  <div *ngIf="status === 'ready'" class="table-wrap">
+    <table>
+      <caption>Schwab positions</caption>
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col" class="num">Quantity</th>
+          <th scope="col" class="num">Average cost</th>
+          <th scope="col" class="num">Market value</th>
+          <th scope="col" class="num">Unrealized gain/loss</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let position of positions">
+          <th scope="row">{{ position.symbol }}</th>
+          <td class="num">{{ position.quantity | number: '1.0-4' }}</td>
+          <td class="num">{{ position.averageCost | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td class="num">{{ position.marketValue | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td
+            class="num"
+            [class.gain]="position.unrealizedGainLoss > 0"
+            [class.loss]="position.unrealizedGainLoss < 0"
+          >
+            {{ position.unrealizedGainLoss | currency: 'USD' : 'symbol' : '1.2-2' }}
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="totals">
+          <th scope="row">Total</th>
+          <td></td>
+          <td></td>
+          <td class="num">{{ totalMarketValue | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td class="num" [class.gain]="totalUnrealized > 0" [class.loss]="totalUnrealized < 0">
+            {{ totalUnrealized | currency: 'USD' : 'symbol' : '1.2-2' }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
