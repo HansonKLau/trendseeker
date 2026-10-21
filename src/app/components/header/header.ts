@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth-service';
-import { UserInfoService } from '../../services/user-info-service';
 import { CommonModule } from '@angular/common';
-import { firstValueFrom, switchMap, tap, NEVER} from 'rxjs';
+import { EMPTY, firstValueFrom, of, Subscription } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
@@ -12,106 +12,80 @@ import { firstValueFrom, switchMap, tap, NEVER} from 'rxjs';
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
-
-export class Header {
-
+export class Header implements OnInit, OnDestroy {
   public schwabConnected: boolean = false;
+  private schwabStatusSub?: Subscription;
 
-  constructor(public authService: AuthService, private userService: UserInfoService, private router: Router) {}
+  constructor(
+    public authService: AuthService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
-    this.authService.schwabIsLoggedIn().subscribe({
-      next: (res) => {
-        if (res.logged_in) {
-          this.schwabConnected = true;
-        } else {
-          this.schwabConnected = false;
-        }
-      },
-      error: (err) => console.error('Auth state subscription error:', err)
-    });
+    // Firebase auth may not be ready when the header is created. Wait until
+    // user$ emits a signed-in user before calling /auth/status.
+    this.schwabStatusSub = this.authService.user$
+      .pipe(
+        switchMap((user) => {
+          if (!user) {
+            return of({ logged_in: false });
+          }
 
-    if (this.authService.firebaseLoggedIn()) {
-      console.log('User already logged in to Firebase');
-    }
+          return this.authService.schwabIsLoggedIn().pipe(
+            catchError((err: unknown) => {
+              const status = err instanceof HttpErrorResponse ? err.status : undefined;
+              console.error('Schwab status check failed', status ?? 'unknown');
+              return of({ logged_in: false });
+            }),
+          );
+        }),
+      )
+      .subscribe((res) => {
+        this.schwabConnected = !!res.logged_in;
+        this.authService.setSchwabConnected(this.schwabConnected);
+      });
+  }
+
+  ngOnDestroy() {
+    this.schwabStatusSub?.unsubscribe();
   }
 
   login() {
-    try {
+    this.authService
+      .googleLogin()
+      .pipe(switchMap(() => this.schwabLogin()))
+      .subscribe({
+        error: (err: unknown) => this.logAuthStatus('Auth state error', err),
+      });
+  }
 
-      this.authService.googleLogin().pipe(
-        switchMap(googleRes => {
-          console.log('Firebase login successful:', googleRes);
-          return this.schwabLogin();
-        })
-      ).subscribe(schwabRes => {
-          console.log('Schwab login flow initiated:', schwabRes);
-        }
-      ) 
-      
-      // if (!this.authService.firebaseLoggedIn()) {
-      //   console.warn('User not logged in → redirecting to Firebase login');
-      //   await this.authService.googleLogin();
-      //   return;
-      // }
-
-      // console.log('Firebase user logged in');
-
-      // this.authService.schwabIsLoggedIn().pipe(
-
-      //   // makes sure schwab is connected
-      //   switchMap(res => {
-      //     if (!res.logged_in) {
-      //       console.log("Schwab not connected, starting auth flow...");
-      //       return this.authService.schwabLogin().pipe(
-      //         tap(login => window.open(login.auth_url, "_self")),
-      //         switchMap(() => NEVER)
-      //       );
-      //     }
-
-      //     console.log("Schwab already connected.");
-
-      //     return this.authService.schwabRefreshTokens();
-      //   }),
-
-      //   switchMap(() => this.userService.setAccountInfo())
-
-      // ).subscribe({
-      //   next: () => {
-      //     console.log("Account info set");
-      //     this.router.navigate(['/dashboard']);
-      //   },
-      //   error: err => console.error("Flow error:", err)
-      // });
-
-    } catch (err) {
-      console.error('Auth state error:', err);
-    }
+  /** Signed-in user who still needs Schwab. Same OAuth start as Login. */
+  connectSchwab(): void {
+    this.authService.connectSchwab().subscribe();
   }
 
   schwabLogin() {
     return this.authService.schwabIsLoggedIn().pipe(
-      switchMap(res => {
+      switchMap((res) => {
         if (!res.logged_in) {
-          console.log('Schwab not connected, starting Schwab auth flow...');
-          return this.authService.schwabLogin().pipe(
-            tap(res => window.open(res.auth_url, '_self'))
-          );
-        } else {
-          console.log('Schwab already connected.');
-          this.schwabConnected = true;
-          this.authService.setSchwabConnected(true);
-
-          return this.authService.schwabRefreshTokens().pipe(
-            tap(res => {
-              console.log('Schwab tokens refreshed:', res.message);
-              this.router.navigate(['/dashboard']);
-            })
-          );
+          return this.authService.connectSchwab();
         }
-      })
-  );
-}
+
+        this.schwabConnected = true;
+        this.authService.setSchwabConnected(true);
+
+        return this.authService.schwabRefreshTokens().pipe(
+          tap(() => {
+            this.router.navigate(['/dashboard']);
+          }),
+        );
+      }),
+      catchError((err: unknown) => {
+        this.authService.reportSchwabConnectError(err);
+        return EMPTY;
+      }),
+    );
+  }
 
   async logout() {
     try {
@@ -126,10 +100,16 @@ export class Header {
       await this.authService.googleLogout();
       this.schwabConnected = false;
       this.authService.setSchwabConnected(false);
-      console.log("User logged out successfully");
+      this.authService.clearSchwabConnectError();
+      console.log('User logged out successfully');
       this.router.navigate(['/']);
     } catch (err) {
       console.error('Firebase logout failed');
     }
+  }
+
+  private logAuthStatus(message: string, err: unknown): void {
+    const status = err instanceof HttpErrorResponse ? err.status : undefined;
+    console.error(message, status ?? 'unknown');
   }
 }

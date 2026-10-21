@@ -8,7 +8,9 @@
 
   <div *ngIf="status === 'not-connected'" class="status">
     <p>Schwab is not connected.</p>
-    <p>Connect Schwab while signed in, then open the dashboard again.</p>
+    <p>Connect Schwab to load your positions.</p>
+    <p *ngIf="connectError" class="connect-error" role="alert">{{ connectError }}</p>
+    <button type="button" (click)="connectSchwab()">Connect Schwab</button>
   </div>
 
   <div *ngIf="status === 'error'" class="status">
@@ -20,7 +22,9 @@
 
   <div *ngIf="status === 'ready'" class="table-wrap">
     <table>
-      <caption>Schwab positions</caption>
+      <caption>
+        Schwab positions
+      </caption>
       <thead>
         <tr>
           <th scope="col">Symbol</th>
