@@ -66,6 +66,10 @@ export class AuthService {
     return !!this.userSubject.value;
   }
 
+  authReady(): Promise<void> {
+    return auth.authStateReady();
+  }
+
   googleLogout() {
     return auth.signOut();
   }
@@ -91,7 +95,15 @@ export class AuthService {
   }
 
   schwabLogout(): Observable<{ message: string }> {
-    return this.http.get<{ message: string }>(`${this.baseUrl}/logout`, { withCredentials: true });
+    return from(this.getFirebaseIdToken()).pipe(
+      switchMap((idToken: string) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${idToken}`,
+        });
+
+        return this.http.get<{ message: string }>(`${this.baseUrl}/logout`, { headers, withCredentials: true });
+      })
+    );
   }
 
   schwabRefreshTokens(): Observable<{ message: string }> {

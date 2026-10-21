@@ -1,0 +1,81 @@
+.dashboard {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+
+  h2 {
+    font-size: 1.75rem;
+  }
+}
+
+.note {
+  margin: 0.35rem 0 1.5rem;
+  color: #444;
+}
+
+.status {
+  padding: 1rem 0;
+  line-height: 1.5;
+
+  button {
+    margin-top: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    background: #333;
+    color: white;
+    border: 0;
+    font-weight: bold;
+    cursor: pointer;
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  thead th {
+    background: #333;
+    color: white;
+    border-bottom: 0;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gain {
+    color: green;
+  }
+
+  .loss {
+    color: rgb(214, 17, 17);
+  }
+
+  .totals th,
+  .totals td {
+    font-weight: bold;
+    border-bottom: 0;
+  }
+}

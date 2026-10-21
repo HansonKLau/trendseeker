@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth-service';
 import { UserInfoService } from '../../services/user-info-service';
 import { CommonModule } from '@angular/common';
@@ -114,13 +115,21 @@ export class Header {
 
   async logout() {
     try {
+      // Schwab logout needs the Firebase ID token, so it has to finish first.
+      await firstValueFrom(this.authService.schwabLogout());
+    } catch (err) {
+      const status = err instanceof HttpErrorResponse ? err.status : undefined;
+      console.error('Schwab logout failed', status ?? 'unknown');
+    }
+
+    try {
       await this.authService.googleLogout();
       this.schwabConnected = false;
       this.authService.setSchwabConnected(false);
       console.log("User logged out successfully");
       this.router.navigate(['/']);
     } catch (err) {
-      console.error("Logout error:", err);
+      console.error('Firebase logout failed');
     }
   }
 }

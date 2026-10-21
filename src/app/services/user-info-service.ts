@@ -2,8 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { from, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AccountResponse } from '../models/account.model';
-import { switchMap } from 'rxjs/operators';
+import {
+  PositionView,
+  SchwabNotConnectedError,
+  parsePositionsResponse,
+  responseIndicatesDisconnected,
+} from '../models/positions';
+import { map, switchMap } from 'rxjs/operators';
 import { auth } from '../../firebase/firebase';
 import { HttpHeaders } from '@angular/common/http';
 
@@ -38,6 +43,28 @@ export class UserInfoService {
           { headers, withCredentials: true }
         );
       })
+    );
+  }
+
+  getPositions(): Observable<PositionView[]> {
+    return from(this.getFirebaseIdToken()).pipe(
+      switchMap((idToken: string) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${idToken}`,
+        });
+
+        return this.http.get<unknown>(`${this.baseUrl}/positions`, {
+          headers,
+          withCredentials: true,
+        });
+      }),
+      map((body) => {
+        if (responseIndicatesDisconnected(body)) {
+          throw new SchwabNotConnectedError();
+        }
+
+        return parsePositionsResponse(body);
+      }),
     );
   }
 

@@ -1,69 +1,87 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { interval, firstValueFrom } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Subscription, from, of } from 'rxjs';
+import { catchError, switchMap, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth-service';
 import { UserInfoService } from '../services/user-info-service';
-import { Router } from '@angular/router';
+import { PositionView, classifyPositionsError } from '../models/positions';
+
+type DashboardStatus = 'loading' | 'signed-out' | 'not-connected' | 'empty' | 'error' | 'ready';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
-export class Dashboard implements OnInit {
+export class Dashboard implements OnInit, OnDestroy {
+  status: DashboardStatus = 'loading';
+  positions: PositionView[] = [];
+  errorMessage = '';
 
-  constructor(private authService: AuthService, 
-              private userInfoService: UserInfoService,
-              private router: Router) {}
+  private loadSub?: Subscription;
 
-  ngOnInit() {
+  constructor(
+    private authService: AuthService,
+    private userInfoService: UserInfoService,
+  ) {}
 
-    // (async () => {
-    //   try {
-    //     // wait for Firebase auth state so we have an ID token available
-    //     const user = await firstValueFrom(this.authService.user$);
-    //     if (!user) {
-    //       console.warn('User not logged in → redirecting to home');
-    //       this.router.navigate(['/']);
-    //       return;
-    //     }
+  ngOnInit(): void {
+    this.load();
+  }
 
-    //     // ask the backend whether Schwab is connected for this user
-    //     const status = await firstValueFrom(this.authService.schwabIsLoggedIn());
-    //     this.authService.setSchwabConnected(status.logged_in);
+  ngOnDestroy(): void {
+    this.loadSub?.unsubscribe();
+  }
 
-    //     if (!status.logged_in) {
-    //       console.warn('User not connected to Schwab → redirecting to home');
-    //       this.router.navigate(['/']);
-    //       return;
-    //     }
+  load(): void {
+    this.loadSub?.unsubscribe();
+    this.status = 'loading';
+    this.positions = [];
+    this.errorMessage = '';
 
-    //     // Schwab is connected — set account info
-    //     this.userInfoService.setAccountInfo().subscribe({
-    //       next: (res) => {
-    //         console.log('Account info set successfully:', res);
-    //       },
-    //       error: (err) => {
-    //         console.error('Error setting account info:', err);
-    //       }
-    //     });
+    this.loadSub = from(this.authService.authReady())
+      .pipe(
+        switchMap(() => this.authService.user$.pipe(take(1))),
+        switchMap((user) => {
+          if (!user) {
+            return of<DashboardStatus>('signed-out');
+          }
 
-    //     // keep an idle check that redirects if Firebase signs out
-    //     const idleCheck = interval(30 * 60 * 1000);
-    //     const sub = idleCheck.subscribe(() => {
-    //       if (!this.authService.firebaseLoggedIn()) {
-    //         console.warn("Firebase user logged out, redirecting to home...");
-    //         this.router.navigate(['/']);
-    //         sub.unsubscribe();
-    //       }
-    //     });
+          return this.authService.schwabIsLoggedIn().pipe(
+            switchMap((schwab) => {
+              if (!schwab.logged_in) {
+                return of<DashboardStatus>('not-connected');
+              }
 
-    //   } catch (err) {
-    //     console.error('Initialization error:', err);
-    //     // fallback: redirect to home
-    //     this.router.navigate(['/']);
-    //   }
-    // })();
+              return this.userInfoService.getPositions().pipe(
+                switchMap((positions) => {
+                  this.positions = positions;
+                  return of<DashboardStatus>(positions.length === 0 ? 'empty' : 'ready');
+                }),
+              );
+            }),
+          );
+        }),
+        catchError((err: unknown) => {
+          if (classifyPositionsError(err) === 'not-connected') {
+            return of<DashboardStatus>('not-connected');
+          }
 
+          this.errorMessage = 'Could not load positions. Try again.';
+          return of<DashboardStatus>('error');
+        }),
+      )
+      .subscribe((status) => {
+        this.status = status;
+      });
+  }
+
+  get totalMarketValue(): number {
+    return this.positions.reduce((sum, position) => sum + position.marketValue, 0);
+  }
+
+  get totalUnrealized(): number {
+    return this.positions.reduce((sum, position) => sum + position.unrealizedGainLoss, 0);
   }
 }
