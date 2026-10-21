@@ -18,8 +18,10 @@ export class Dashboard implements OnInit, OnDestroy {
   status: DashboardStatus = 'loading';
   positions: PositionView[] = [];
   errorMessage = '';
+  connectError = '';
 
   private loadSub?: Subscription;
+  private connectErrorSub?: Subscription;
 
   constructor(
     private authService: AuthService,
@@ -27,11 +29,19 @@ export class Dashboard implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.connectErrorSub = this.authService.schwabConnectError$.subscribe((message) => {
+      this.connectError = message ?? '';
+    });
     this.load();
   }
 
   ngOnDestroy(): void {
     this.loadSub?.unsubscribe();
+    this.connectErrorSub?.unsubscribe();
+  }
+
+  connectSchwab(): void {
+    this.authService.connectSchwab().subscribe();
   }
 
   load(): void {

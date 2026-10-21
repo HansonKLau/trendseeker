@@ -1,50 +1,62 @@
-
 nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #333;
+  color: white;
+
+  h1 {
+    // TODO: Add logo
+    // TODO: Change font
+
+    margin: 0;
+    font-size: 1.5rem;
+    a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  ul {
+    list-style: none;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background-color: #333;
-    color: white;
+    gap: 2rem;
+    margin: 0;
+    margin-right: 1rem;
+    padding: 0;
 
-    h1 {
-        // TODO: Add logo
-        // TODO: Change font
-
-        margin: 0;
-        font-size: 1.5rem;
-        a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-
-        }
+    li {
+      a,
+      button {
+        color: white;
+        text-decoration: none;
+        background: transparent;
+        border: 0;
+        font: inherit;
+        font-weight: bold;
+        padding: 0;
+        cursor: pointer;
 
         &:hover {
-            cursor: pointer;
+          transition-duration: 200ms;
+          color: rgb(214, 17, 17);
+          cursor: pointer;
         }
+      }
     }
+  }
+}
 
-    ul {
-        list-style: none;
-        display: flex;
-        gap: 2rem;
-        margin: 0;
-        margin-right: 1rem;
-        padding: 0;
-
-        li {
-            a {
-                color: white;
-                text-decoration: none;
-                font-weight: bold;
-
-                &:hover {
-                    transition-duration: 200ms;
-                    color: rgb(214, 17, 17);
-                    cursor: pointer;
-                }
-            }
-        }
-    }
+.auth-error {
+  margin: 0;
+  padding: 0.65rem 2rem;
+  background: #f8e8e8;
+  color: #7f1d1d;
+  font-weight: 600;
 }
